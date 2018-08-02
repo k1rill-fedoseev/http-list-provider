@@ -1,0 +1,11 @@
+{
+  "extends": [
+    "plugin:node/recommended",
+    "airbnb-base",
+    "plugin:prettier/recommended"
+  ],
+  "plugins": ["node"],
+  "rules": {
+    "arrow-body-style": "off"
+  }
+}
