@@ -8,7 +8,7 @@
     "lint": "eslint .",
     "coverage": "nyc mocha",
     "build": "babel index.js --out-file dist/main.js",
-    "prepublish": "mkdirp dist && npm run build"
+    "prepublishOnly": "mkdirp dist && npm run build"
   },
   "keywords": [
     "blockchain",
