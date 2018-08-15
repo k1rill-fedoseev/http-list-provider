@@ -1,6 +1,10 @@
 const fetch = require('node-fetch')
 
 function HttpListProvider(urls) {
+  if (!(this instanceof HttpListProvider)) {
+    return new HttpListProvider(urls)
+  }
+
   if (!urls || !urls.length) {
     throw new Error(`Invalid URLs: '${urls}'`)
   }
