@@ -8,6 +8,8 @@ const chaiAsPromised = require('chai-as-promised')
 chai.use(chaiAsPromised)
 const { expect } = chai
 
+const { HttpListProviderError } = HttpListProvider
+
 describe('http-list-provider', () => {
   let proxy1Handler = null
   let proxy2Handler = null
@@ -115,6 +117,24 @@ describe('http-list-provider', () => {
       )
 
       return expect(web3.eth.getBlockNumber()).to.be.rejected
+    })
+  })
+
+  it('should throw a custom error with an array of errors', () => {
+    const whenProxy1Closed = new Promise(resolve => proxy1Handler.close(resolve))
+    const whenProxy2Closed = new Promise(resolve => proxy2Handler.close(resolve))
+
+    return Promise.all([whenProxy1Closed, whenProxy2Closed]).then(() => {
+      const web3 = new Web3(
+        new HttpListProvider(['http://localhost:8546', 'http://localhost:8547'])
+      )
+
+      return expect(web3.eth.getBlockNumber())
+        .to.be.rejectedWith(HttpListProviderError)
+        .then(e => {
+          expect(e.errors).to.be.an('array')
+          expect(e.errors.length).to.equal(2)
+        })
     })
   })
 })
