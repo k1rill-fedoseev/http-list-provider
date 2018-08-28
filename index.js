@@ -1,4 +1,12 @@
 const fetch = require('node-fetch')
+const promiseRetry = require('promise-retry')
+const deepmerge = require('deepmerge')
+
+const defaultOptions = {
+  retry: {
+    retries: 0
+  }
+}
 
 class HttpListProviderError extends Error {
   constructor(message, errors) {
@@ -7,7 +15,7 @@ class HttpListProviderError extends Error {
   }
 }
 
-function HttpListProvider(urls) {
+function HttpListProvider(urls, options = {}) {
   if (!(this instanceof HttpListProvider)) {
     return new HttpListProvider(urls)
   }
@@ -17,6 +25,7 @@ function HttpListProvider(urls) {
   }
 
   this.urls = urls
+  this.options = deepmerge(defaultOptions, options)
   this.currentIndex = 0
 }
 
@@ -25,7 +34,9 @@ HttpListProvider.prototype.send = async function send(payload, callback) {
   const { currentIndex } = this
 
   try {
-    const [result, index] = trySend(payload, this.urls, currentIndex)
+    const [result, index] = await promiseRetry(retry => {
+      return trySend(payload, this.urls, currentIndex).catch(retry)
+    }, this.options.retry)
     this.currentIndex = index
     callback(null, result)
   } catch (e) {
