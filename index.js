@@ -44,10 +44,10 @@ HttpListProvider.prototype.send = async function send(payload, callback) {
   }
 }
 
-async function trySend(payload, originalUrls, initialIndex) {
-  const urls = originalUrls.slice(initialIndex).concat(originalUrls.slice(0, initialIndex))
+async function trySend(payload, urls, initialIndex) {
   const errors = []
-  for (let i = 0; i < urls.length; i++) {
+
+  for (let i = initialIndex, count = 0; count < urls.length; i = (i + 1) % urls.length, count++) {
     const url = urls[i]
     try {
       const result = await fetch(url, {

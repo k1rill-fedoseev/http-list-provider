@@ -110,27 +110,25 @@ describe('http-list-provider', () => {
     })
   })
 
-  it('should keep using the second URL in the list if the first has already failed', () => {
-    return new Promise((resolve, reject) => {
-      proxy1Handler.close(() => {
-        const web3 = new Web3(
-          new HttpListProvider(['http://localhost:8546', 'http://localhost:8547'])
-        )
+  it('should keep using the second URL in the list if the first has already failed', async () => {
+    proxy1Reject = true
 
-        return web3.eth
-          .getBlockNumber()
-          .then(blockNumber => {
-            expect(blockNumber.toString()).to.equal('0')
-            return web3.eth.getBlockNumber()
-          })
-          .then(blockNumber => {
-            expect(blockNumber.toString()).to.equal('0')
-            expect(proxy1Requests).to.equal(0)
-            expect(proxy2Requests).to.equal(2)
-          })
-          .then(resolve, reject)
-      })
-    })
+    const web3 = new Web3(new HttpListProvider(['http://localhost:8546', 'http://localhost:8547']))
+
+    let blockNumber = await web3.eth.getBlockNumber()
+    expect(blockNumber.toString()).to.equal('0')
+    expect(proxy1Requests).to.equal(1)
+    expect(proxy2Requests).to.equal(1)
+
+    blockNumber = await web3.eth.getBlockNumber()
+    expect(blockNumber.toString()).to.equal('0')
+    expect(proxy1Requests).to.equal(1)
+    expect(proxy2Requests).to.equal(2)
+
+    blockNumber = await web3.eth.getBlockNumber()
+    expect(blockNumber.toString()).to.equal('0')
+    expect(proxy1Requests).to.equal(1)
+    expect(proxy2Requests).to.equal(3)
   })
 
   it('should fail if both URLs are not working', () => {
