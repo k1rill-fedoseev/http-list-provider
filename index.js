@@ -47,8 +47,9 @@ HttpListProvider.prototype.send = async function send(payload, callback) {
 async function trySend(payload, urls, initialIndex) {
   const errors = []
 
-  for (let i = initialIndex, count = 0; count < urls.length; i = (i + 1) % urls.length, count++) {
-    const url = urls[i]
+  let index = initialIndex
+  for (let count = 0; count < urls.length; count++) {
+    const url = urls[index]
     try {
       const result = await fetch(url, {
         headers: {
@@ -57,10 +58,11 @@ async function trySend(payload, urls, initialIndex) {
         method: 'POST',
         body: JSON.stringify(payload)
       }).then(request => request.json())
-      return [result, i]
+      return [result, index]
     } catch (e) {
       errors.push(e)
     }
+    index = (index + 1) % urls.length
   }
 
   throw new HttpListProviderError('Request failed for all urls', errors)
