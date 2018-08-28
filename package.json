@@ -4,11 +4,12 @@
   "description": "A Web3 provider that allows using several RPC URLs",
   "main": "dist/main.js",
   "scripts": {
+    "pretest": "npm run build",
     "test": "mocha",
     "lint": "eslint .",
     "coverage": "nyc mocha",
-    "build": "babel index.js --out-file dist/main.js",
-    "prepublishOnly": "mkdirp dist && npm run build"
+    "build": "mkdirp dist && babel index.js --out-file dist/main.js",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "blockchain",

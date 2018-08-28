@@ -10,39 +10,65 @@ const { expect } = chai
 
 const { HttpListProviderError } = HttpListProvider
 
+const sleep = timeout => new Promise(resolve => setTimeout(resolve, timeout))
+
 describe('http-list-provider', () => {
   let proxy1Handler = null
   let proxy2Handler = null
   let proxy1Requests = 0
   let proxy2Requests = 0
+  let proxy1Reject = false
+  let proxy2Reject = false
 
-  beforeEach(() => {
+  beforeEach('create proxies', () => {
     const proxy1 = express()
     const proxy2 = express()
 
     proxy1Requests = 0
     proxy1.use(
       '/',
-      proxy(() => {
-        proxy1Requests += 1
-        return `http://localhost:8545`
-      })
+      proxy(
+        () => {
+          return `http://localhost:8545`
+        },
+        {
+          proxyReqOptDecorator: opts => {
+            proxy1Requests += 1
+            if (proxy1Reject) {
+              return Promise.reject()
+            }
+            return opts
+          }
+        }
+      )
     )
 
     proxy2Requests = 0
     proxy2.use(
       '/',
-      proxy(() => {
-        proxy2Requests += 1
-        return `http://localhost:8545`
-      })
+      proxy(
+        () => {
+          return `http://localhost:8545`
+        },
+        {
+          proxyReqOptDecorator: opts => {
+            proxy2Requests += 1
+            if (proxy2Reject) {
+              return Promise.reject()
+            }
+            return opts
+          }
+        }
+      )
     )
 
     proxy1Handler = proxy1.listen(8546)
     proxy2Handler = proxy2.listen(8547)
+    proxy1Reject = false
+    proxy2Reject = false
   })
 
-  afterEach(() => {
+  afterEach('close proxies', () => {
     proxy1Handler.close()
     proxy2Handler.close()
   })
@@ -136,5 +162,31 @@ describe('http-list-provider', () => {
           expect(e.errors.length).to.equal(2)
         })
     })
+  })
+
+  it('should retry once', async () => {
+    proxy1Reject = true
+    proxy2Reject = true
+
+    const web3 = new Web3(
+      new HttpListProvider(['http://localhost:8546', 'http://localhost:8547'], {
+        retry: {
+          retries: 1,
+          minTimeout: 100
+        }
+      })
+    )
+
+    expect(proxy1Requests).to.equal(0)
+
+    const result = web3.eth.getBlockNumber()
+
+    await sleep(50)
+    proxy1Reject = false
+
+    await expect(result).to.be.fulfilled
+
+    expect(proxy1Requests).to.equal(2)
+    expect(proxy2Requests).to.equal(1)
   })
 })
