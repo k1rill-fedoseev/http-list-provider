@@ -20,31 +20,39 @@ function HttpListProvider(urls) {
   this.currentIndex = 0
 }
 
-HttpListProvider.prototype.send = async function send(payload, callback, errors = []) {
+HttpListProvider.prototype.send = async function send(payload, callback) {
   // save the currentIndex to avoid race condition
   const { currentIndex } = this
 
-  if (errors.length === this.urls.length) {
-    callback(new HttpListProviderError('Request failed for all urls', errors))
-    return
-  }
-
-  const url = this.urls[currentIndex]
-
   try {
-    const result = await fetch(url, {
-      headers: {
-        'Content-type': 'application/json'
-      },
-      method: 'POST',
-      body: JSON.stringify(payload)
-    }).then(request => request.json())
-
+    const [result, index] = trySend(payload, this.urls, currentIndex)
+    this.currentIndex = index
     callback(null, result)
   } catch (e) {
-    this.currentIndex = (currentIndex + 1) % this.urls.length
-    this.send(payload, callback, errors.concat(e))
+    callback(e)
   }
+}
+
+async function trySend(payload, originalUrls, initialIndex) {
+  const urls = originalUrls.slice(initialIndex).concat(originalUrls.slice(0, initialIndex))
+  const errors = []
+  for (let i = 0; i < urls.length; i++) {
+    const url = urls[i]
+    try {
+      const result = await fetch(url, {
+        headers: {
+          'Content-type': 'application/json'
+        },
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }).then(request => request.json())
+      return [result, i]
+    } catch (e) {
+      errors.push(e)
+    }
+  }
+
+  throw new HttpListProviderError('Request failed for all urls', errors)
 }
 
 module.exports = HttpListProvider

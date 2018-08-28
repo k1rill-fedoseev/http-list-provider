@@ -7,6 +7,9 @@
   "plugins": ["node"],
   "rules": {
     "arrow-body-style": "off",
-    "node/no-unsupported-features/es-syntax": "off"
+    "node/no-unsupported-features/es-syntax": "off",
+    "no-await-in-loop": "off",
+    "no-plusplus": "off",
+    "no-use-before-define": "off"
   }
 }
