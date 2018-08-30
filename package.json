@@ -1,6 +1,6 @@
 {
   "name": "http-list-provider",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "A Web3 provider that allows using several RPC URLs",
   "main": "dist/main.js",
   "scripts": {
