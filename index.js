@@ -3,6 +3,7 @@ const promiseRetry = require('promise-retry')
 const deepmerge = require('deepmerge')
 
 const defaultOptions = {
+  requestTimeout: 0,
   retry: {
     retries: 0
   }
@@ -35,7 +36,7 @@ HttpListProvider.prototype.send = async function send(payload, callback) {
 
   try {
     const [result, index] = await promiseRetry(retry => {
-      return trySend(payload, this.urls, currentIndex).catch(retry)
+      return trySend(payload, this.urls, currentIndex, this.options).catch(retry)
     }, this.options.retry)
     this.currentIndex = index
     callback(null, result)
@@ -44,7 +45,7 @@ HttpListProvider.prototype.send = async function send(payload, callback) {
   }
 }
 
-async function trySend(payload, urls, initialIndex) {
+async function trySend(payload, urls, initialIndex, options) {
   const errors = []
 
   let index = initialIndex
@@ -56,7 +57,8 @@ async function trySend(payload, urls, initialIndex) {
           'Content-type': 'application/json'
         },
         method: 'POST',
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        timeout: options.requestTimeout
       }).then(request => request.json())
       return [result, index]
     } catch (e) {
